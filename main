@@ -1,0 +1,65 @@
+!pip install biopython
+
+import gzip
+import time
+from Bio import SeqIO, Align
+
+
+BLUERESTRICTIVE_R1 = r"C:\Users\nwoelk\Desktop\90-911890703\raw_fastq\BLUERESTRICTIVE_R1_001.fastq.gz"
+BLUERESTRICTIVE_R2 = r"C:\Users\nwoelk\Desktop\90-911890703\raw_fastq\BLUERESTRICTIVE_R2_001.fastq.gz"
+GREENRESTRICTIVE_R1 = r"C:\Users\nwoelk\Desktop\90-911890703\raw_fastq\GREENRESTRICTIVE_R1_001.fastq.gz"
+GREENRESTRICTIVE_R2 = r"C:\Users\nwoelk\Desktop\90-911890703\raw_fastq\GREENRESTRICTIVE_R2_001.fastq.gz"
+allfiles_blue_R1 =  []
+allfiles_blue_R2 = []
+allfiles_green_R1 = []
+allfiles_green_R2 = []
+
+
+with gzip.open(BLUERESTRICTIVE_R1, "rt") as handle:
+    allfiles_blue_R1 = [record.seq for record in SeqIO.parse(handle, "fastq")]
+
+with gzip.open(BLUERESTRICTIVE_R2, "rt") as handle:
+    allfiles_blue_R2 = [record.seq for record in SeqIO.parse(handle, "fastq")]
+
+with gzip.open(GREENRESTRICTIVE_R1, "rt") as handle:
+    allfiles_green_R1 = [record.seq for record in SeqIO.parse(handle, "fastq")]
+
+with gzip.open(GREENRESTRICTIVE_R2, "rt") as handle:
+    allfiles_green_R2 = [record.seq for record in SeqIO.parse(handle, "fastq")]
+    
+
+_28S_rRNA_fna_file = r"C:\Users\nwoelk\Desktop\28S_rRNA_fnafile.fasta"
+
+for record in SeqIO.parse(_28S_rRNA_fna_file, "fasta"):
+    reference_sequence = record.seq
+    break
+
+aligner = Align.PairwiseAligner()
+aligner.mode = "global"
+
+results_BRR1 = []
+results_BRR2 = []
+results_GRR1 = []
+results_GRR2 = []
+
+
+for read in allfiles_blue_R1:
+    alignment = aligner.align(read, reference_sequence)
+    best_alignment = max(alignment, key=lambda a: a.score)
+    
+    aligned_sequence = best_alignment,aligned[1]
+    mismatch_positions = [i for i, (a, r) in enumerate(zip(aligned_sequence, reference_sequence)) if a != '|' and r != '-']
+    mismatch_ratio = len(mismatch_positions) / len(reference_sequence)
+    
+    result = {
+        "read_id": read.id,
+        "mismatch_positions": mismatch_positions,
+        "mismatch_ratio": mismatch_ratio
+    }
+    results_BRR1.append(result)
+    
+for result in results_BRR1:
+    print("Read ID:", result["read_id"])
+    print("Mismatches:", result["mismatch_positions"])
+    print("Mismatch Ratio:", result["mismatch_ratio"])
+    print("=" * 30)
